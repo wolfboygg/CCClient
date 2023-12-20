@@ -101,11 +101,13 @@ void CStreamClient::CommandConnectProcess() {
                 }
                 // 为0表示连接成功
                 printf("connect success111\n");
+                StartSocketRunning();
                 isConnected = true;
             }
             if (!FD_ISSET(m_sockfd, &r_set) && FD_ISSET(m_sockfd, &w_set)) {
                 // 可写但不可读
                 printf("connect success2222\n");
+                StartSocketRunning();
                 isConnected = true;
             }
         }
@@ -139,7 +141,7 @@ bool CStreamClient::recvSocketData(uint8_t *buff, unsigned int len) {
         recvLen += nRet;
         buff += nRet;
     }
-
+    printf("recv data success\n");
     pthread_mutex_unlock(&m_recvMute);
     return true;
 }
@@ -199,11 +201,67 @@ void CStreamClient::keepAliveHeartBeat() {
         printf("msg header headerId:%s\n", msgHeader.header);
         msgHeader.type = NET_MESSAGE_TYPE_HEART_BEAT;
         msgHeader.contentLength = 0;
-        printf("msg header:%s\n", (char *)&msgHeader);
+        printf("msg header:%s\n", (char *) &msgHeader);
         sendSocketData((uint8_t *) &msgHeader, sizeof(CC_NetMsgHeader));
         usleep(2000 * 1000);
     }
 }
+
+void CStreamClient::StartSocketRunning() {
+    detach_thread_create(NULL, (void *) StartSocketRecvListener, this);
+    detach_thread_create(NULL, (void *) StartSocketSendListener, this);
+}
+
+
+void CStreamClient::StartSocketRecvListener(void *args) {
+    CStreamClient *client = static_cast<CStreamClient *>(args);
+    if (client != NULL) {
+        client->StartRunRecv();
+    }
+}
+
+void CStreamClient::StartRunRecv() {
+    while (isConnected) {
+        usleep(10 * 1000);
+        printf("client start run recv\n");
+        CC_NetMsgHeader msgHeader;
+        memset(&msgHeader, 0, sizeof(CC_NetMsgHeader));
+
+        int result = recvSocketData((uint8_t *) &msgHeader, sizeof(CC_NetMsgHeader));
+        printf("recvSocketData result:%d\n", result);
+        if (result) {
+            printf("msg header:%s\n", msgHeader.header);
+            if (strncmp("CCTC", msgHeader.header, sizeof(msgHeader.header)) == 0) {
+                if (msgHeader.type == NET_MESSAGE_TYPE_AVSTREAM) {
+                    uint8_t *out = (uint8_t *) malloc(msgHeader.contentLength);
+                    recvSocketData(out, msgHeader.contentLength);
+                    printf("h264_compress_data:");
+                    for (int i = 0; i < 40; i++) {
+                        printf("%X ", *(out + i));
+                    }
+                    printf("\n");
+                    printf("h264_compress_data length:%d\n", msgHeader.contentLength);
+                    free(out);
+                }
+            }
+        }
+    }
+}
+
+void CStreamClient::StartSocketSendListener(void *args) {
+    CStreamClient *client = static_cast<CStreamClient *>(args);
+    if (client != NULL) {
+        client->StartRunSend();
+    }
+}
+
+void CStreamClient::StartRunSend() {
+    while (isConnected) {
+        usleep(2000 * 1000);
+        printf("client start run send\n");
+    }
+}
+
 
 CStreamClient::~CStreamClient() {
     CloseSocketConnection();

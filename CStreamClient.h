@@ -29,11 +29,20 @@ private:
 
     bool sendSocketData(uint8_t *buff, unsigned int len);
 
+    void StartSocketRunning();
+
+    void StartRunRecv();
+
+    void StartRunSend();
+
 
 public:
     static void StartRunClientProcess(void *args);
 
     static void clientExitSignalProcess(int num);
+
+    static void StartSocketRecvListener(void *args);
+    static void StartSocketSendListener(void *args);
 
 private:
     int m_sockfd;

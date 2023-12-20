@@ -8,7 +8,7 @@ int main() {
     CC_NetConnectInfo info;
     memset(&info, 0, sizeof(CC_NetConnectInfo));
 
-    char *server_ip = (char *) "172.16.238.250";
+    char *server_ip = (char *) "172.16.238.53";
     strncpy(info.server_ip, server_ip, sizeof(info.server_ip));
     info.port = LISTEN_PORT;
 

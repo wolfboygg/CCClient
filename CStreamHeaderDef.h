@@ -17,6 +17,10 @@
 #define LISTEN_PORT 30000
 
 #define NET_MESSAGE_TYPE_HEART_BEAT 10001
+#define NET_MESSAGE_TYPE_AVSTREAM 10002
+
+#define NET_CONTENT_VIDEO 50001
+#define NET_CONTENT_AUDIO 50002
 
 #pragma pack(push, 1)
 
@@ -28,8 +32,16 @@ typedef struct netConnectInfo {
 typedef struct netMsgHeader {
     char header[4];
     int type;
+    int subType;
     int contentLength;
 } CC_NetMsgHeader;
+
+
+typedef struct netAVStream {
+    uint8_t *buffer;
+    uint32_t size;
+    uint16_t type;
+} CC_AVStream;
 
 #pragma pack(pop)
 
